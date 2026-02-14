@@ -12,6 +12,11 @@ class GameEngine {
         // Start the loop
         this.lastTime = 0
         requestAnimationFrame( this.gameLoop.bind(this) )
+
+
+        // Renders from other classes (e.g., Controls) can be called here
+        // or from the update/draw methods as needed.
+        this.controls = new Controls( this.canvas )
     }
 
     initCanvas() {
@@ -71,6 +76,10 @@ class GameEngine {
         // Clear screen
         this.ctx.clearRect( 0, 0, this.canvas.width, this.canvas.height )
 
+        // Color for background on canvas
+        this.ctx.fillStyle = '#ddd'
+        this.ctx.fillRect( 0, 0, this.canvas.width, this.canvas.height )
+
         // Example: Draw a placeholder player
         this.ctx.fillStyle = '#4CAF50'
         this.ctx.fillRect( 
@@ -79,6 +88,8 @@ class GameEngine {
             100,
             100
          )
+
+         this.controls.render() // Render controls on top of the game world
     }
 
     gameLoop( timeStamp ) {
@@ -92,9 +103,8 @@ class GameEngine {
     }
 }
 
-// Launch the game
+
+
+
 const myGame = new GameEngine()
-
-
-
 
