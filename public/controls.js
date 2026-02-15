@@ -1,6 +1,7 @@
 class Joystick {
     constructor( canvas ) {
         this.ctx = canvas.getContext('2d')
+
         // Store the joystick position for rendering
         this.base = {
                 pos: {
@@ -9,19 +10,25 @@ class Joystick {
                 },
                 radius: 50
         }
+        // Knob position and radius for rendering
         this.knob = {
-            pos: { x: this.base.pos.x, y: this.base.pos.y },
+            pos: { x: this.base.pos.x, 
+                y: this.base.pos.y 
+            },
             radius: 23
         }
-        this.duration = 0
-        this.touchEndTime = Date.now()
+        // Touch proprieties
+        this.touch = {
+            id: null,
+            ended: true,
+            endTime: null,
+            duration: 0
+        }
         this.active = true
-        this.touchId = null
-        this.touchEnded = true
     }
 
     render() {
-        // Render the joystick UI based on the current touch position and state
+        // Render the joystick base UI based on the current touch position and state
         // For demonstration, we'll just draw a simple circle representing the joystick base
         this.ctx.fillStyle = 'rgba(0, 0, 255, 0.5)'
         this.ctx.beginPath()
@@ -66,10 +73,10 @@ class Controls {
 
         /***************** Touch START ********************/
         this.canvas.addEventListener( "touchstart", e => {
-            this.joystick.touchEnded = false
+            this.joystick.touch.ended = false
             const touch = e.touches[0]
             const halfWidth = window.innerWidth / 2
-            this.joystick.touchId = touch.identifier // Store the touch ID for tracking
+            this.joystick.touch.id = touch.identifier // Store the touch ID for tracking
 
             // Invoke the approriate handler depending on the
             // number of touch points.
@@ -79,7 +86,7 @@ class Controls {
             switch (e.touches.length) {
                 case 1:
                     //console.log(`one touch: ${e}`)
-                    this.touchId = touch.identifier // Store the touch ID for tracking
+                    this.joystick.touch.id = touch.identifier // Store the touch ID for tracking
                 break;
                 case 2:
                     //console.log(`two touch: ${e}`)
@@ -124,12 +131,12 @@ class Controls {
 
             const rect = this.canvas.getBoundingClientRect() // Get canvas position for accurate touch coordinates
 
-             // console.log( `touch identifier: ${touch.identifier}, touch id: ${this.joystick.touchId}` )
+             // console.log( `touch identifier: ${touch.identifier}, touch id: ${this.joystick.touch.id}` )
             
             
 
             for (let touch of e.changedTouches) {
-                if (touch.identifier === this.joystick.touchId) {
+                if (touch.identifier === this.joystick.touch.id) {
                     
                     const moveX = touch.clientX - rect.left
                     const moveY = touch.clientY - rect.top
@@ -162,8 +169,8 @@ class Controls {
         /***************** Touch END ********************/
         this.canvas.addEventListener("touchend", e => {
             this.joystick.knob.pos = { ...this.joystick.base.pos } // Reset knob to center
-            this.joystick.touchEnded = true
-            this.joystick.touchEndTime = Date.now()
+            this.joystick.touch.ended = true
+            this.joystick.touch.endTime = Date.now()
         })
         this.canvas.addEventListener("touchcancel", e =>  console.log('touch cancel') )
     }
@@ -171,9 +178,9 @@ class Controls {
     update() {
         // Physics and logic go here
         // deltaTime is useful for consistent speed regardless of frame rate
-        if (this.joystick.active && this.joystick.touchEnded) {
-            this.joystick.duration = Date.now() - this.joystick.touchEndTime
-            if (this.joystick.duration > 2000) 
+        if (this.joystick.active && this.joystick.touch.ended) {
+            this.joystick.touch.duration = Date.now() - this.joystick.touch.endTime
+            if (this.joystick.touch.duration > 2000) 
                 this.joystick.active = false // Deactivate the joystick
         }
     }
