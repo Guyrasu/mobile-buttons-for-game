@@ -13,8 +13,11 @@ class Joystick {
             pos: { x: this.base.pos.x, y: this.base.pos.y },
             radius: 23
         }
+        this.duration = 0
+        this.touchEndTime = Date.now()
         this.active = true
         this.touchId = null
+        this.touchEnded = true
     }
 
     render() {
@@ -63,7 +66,7 @@ class Controls {
 
         /***************** Touch START ********************/
         this.canvas.addEventListener( "touchstart", e => {
-
+            this.joystick.touchEnded = false
             const touch = e.touches[0]
             const halfWidth = window.innerWidth / 2
             this.joystick.touchId = touch.identifier // Store the touch ID for tracking
@@ -89,41 +92,44 @@ class Controls {
                 break;
             }
 
+            
+            // This should work only if the touch is on the left half of the screen
+            if (touch.clientX > halfWidth) return
             const rect = this.canvas.getBoundingClientRect()
-
+            
             const x = touch.clientX - rect.left;
             const y = touch.clientY - rect.top;
+            console.log( `Touch at (${x}, ${y})` )
 
             // Joystick
             this.joystick.base.pos = { x: x, y: y } // Update joystick position for rendering
+            this.joystick.knob.pos = { x: x, y: y } // Reset knob to center on touch start
+            this.joystick.active = true // Activate the joystick
 
-            console.log( `Touch at (${x}, ${y})` )
-            if (touch.clientX < halfWidth) {
-                // 1. Show Joystick UI at touch.clientX, touch.clientY
-                // 2. Lock this touch ID to the joystick logic
-                console.log("Joystick spawned at:", touch.clientX, touch.clientY)
-            }
+            // 1. Show Joystick UI at touch.clientX, touch.clientY
+            // 2. Lock this touch ID to the joystick logic
+            console.log("Joystick spawned at:", touch.clientX, touch.clientY)
+            
         }, { passive: false } )
 
         /***************** Touch MOVE ********************/
         this.canvas.addEventListener("touchmove", e => 
         {
-            console.log('moving touch')
-
             if (!this.joystick.active) return // Detect if joystick is active before processing movement
             
+            const halfWidth = window.innerWidth / 2
             const touch = e.touches[0] // Reassign variable
+            if (touch.clientX > halfWidth) return
+            
 
             const rect = this.canvas.getBoundingClientRect() // Get canvas position for accurate touch coordinates
 
-             console.log( `touch identifier: ${touch.identifier}, touch id: ${this.joystick.touchId}` )
+             // console.log( `touch identifier: ${touch.identifier}, touch id: ${this.joystick.touchId}` )
             
             
 
             for (let touch of e.changedTouches) {
                 if (touch.identifier === this.joystick.touchId) {
-
-                    console.log('moving joystick')
                     
                     const moveX = touch.clientX - rect.left
                     const moveY = touch.clientY - rect.top
@@ -155,14 +161,26 @@ class Controls {
 
         /***************** Touch END ********************/
         this.canvas.addEventListener("touchend", e => {
-            // console.log('touch end')
+            this.joystick.knob.pos = { ...this.joystick.base.pos } // Reset knob to center
+            this.joystick.touchEnded = true
+            this.joystick.touchEndTime = Date.now()
         })
         this.canvas.addEventListener("touchcancel", e =>  console.log('touch cancel') )
+    }
+
+    update() {
+        // Physics and logic go here
+        // deltaTime is useful for consistent speed regardless of frame rate
+        if (this.joystick.active && this.joystick.touchEnded) {
+            this.joystick.duration = Date.now() - this.joystick.touchEndTime
+            if (this.joystick.duration > 2000) 
+                this.joystick.active = false // Deactivate the joystick
+        }
     }
 
     /***************** Render all controls ********************/
     render() {
         // Render the control UI (e.g., joystick, buttons) here
-        this.joystick.render()
+        if (this.joystick.active) this.joystick.render()
     }
 }

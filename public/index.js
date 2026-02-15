@@ -67,6 +67,7 @@ class GameEngine {
     update(deltaTime) {
         // Physics and logic go here
         // deltaTime is useful for consistent speed regardless of frame rate
+        this.controls.update() // Update controls state (e.g., joystick position)
     }
 
 
